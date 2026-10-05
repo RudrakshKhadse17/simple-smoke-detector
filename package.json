@@ -1,0 +1,29 @@
+{
+  "name": "simple-smoke-detector",
+  "version": "1.0.0",
+  "description": "IoT + Web Application for MQ-2 Smoke and Gas Detection System with NodeMCU ESP8266 and Express",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "iot",
+    "esp8266",
+    "mq-2",
+    "smoke-detector",
+    "express",
+    "render",
+    "tailwind"
+  ],
+  "author": "ONE PIECE - Dept of ETC, SB Jain, Nagpur",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

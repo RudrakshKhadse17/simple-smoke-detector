@@ -1,0 +1,172 @@
+/* Custom Styling for Simple Smoke Detector IoT Dashboard */
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Light Mode Overrides */
+html:not(.dark) body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+html:not(.dark) header {
+  background-color: rgba(255, 255, 255, 0.85);
+  border-bottom-color: #e2e8f0;
+}
+
+html:not(.dark) .bg-slate-800\/70,
+html:not(.dark) .bg-slate-800 {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-color: #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+}
+
+html:not(.dark) .bg-slate-900\/60,
+html:not(.dark) .bg-slate-900\/80,
+html:not(.dark) .bg-slate-900 {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+html:not(.dark) .text-white {
+  color: #0f172a;
+}
+
+html:not(.dark) .text-slate-200 {
+  color: #1e293b;
+}
+
+html:not(.dark) .text-slate-300 {
+  color: #334155;
+}
+
+html:not(.dark) .text-slate-400 {
+  color: #64748b;
+}
+
+html:not(.dark) .border-slate-700,
+html:not(.dark) .border-slate-700\/60,
+html:not(.dark) .border-slate-700\/50,
+html:not(.dark) .border-slate-800 {
+  border-color: #e2e8f0;
+}
+
+html:not(.dark) footer {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-top-color: #e2e8f0;
+}
+
+/* Tab button styles */
+.tab-btn {
+  color: #94a3b8;
+  background-color: transparent;
+}
+
+.tab-btn:hover {
+  color: #e2e8f0;
+  background-color: rgba(51, 65, 85, 0.5);
+}
+
+.tab-btn.active {
+  color: #ffffff;
+  background-color: #0d9488;
+  box-shadow: 0 4px 14px 0 rgba(13, 148, 136, 0.35);
+}
+
+html:not(.dark) .tab-btn {
+  color: #64748b;
+}
+
+html:not(.dark) .tab-btn:hover {
+  color: #0f172a;
+  background-color: #e2e8f0;
+}
+
+html:not(.dark) .tab-btn.active {
+  color: #ffffff;
+  background-color: #0d9488;
+}
+
+/* LED Bulb Effects */
+.led-on-glow {
+  background: radial-gradient(circle, #2dd4bf 0%, #14b8a6 40%, #0d9488 70%, #042f2e 100%) !important;
+  box-shadow: 0 0 50px #14b8a6, 0 0 100px #2dd4bf, inset 0 0 20px #99f6e4 !important;
+  border-color: #5eead4 !important;
+  animation: ledPulse 2s infinite alternate ease-in-out;
+}
+
+.led-on-aura {
+  background-color: rgba(20, 184, 166, 0.45) !important;
+  box-shadow: 0 0 120px rgba(45, 212, 191, 0.6) !important;
+}
+
+@keyframes ledPulse {
+  0% {
+    box-shadow: 0 0 35px #14b8a6, 0 0 70px #2dd4bf, inset 0 0 15px #99f6e4;
+  }
+  100% {
+    box-shadow: 0 0 65px #14b8a6, 0 0 120px #2dd4bf, inset 0 0 30px #ffffff;
+  }
+}
+
+/* Danger State Glow for Hero Card */
+.glow-danger {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+  filter: blur(80px);
+}
+
+.glow-warning {
+  background-color: rgba(245, 158, 11, 0.22) !important;
+  filter: blur(80px);
+}
+
+.glow-safe {
+  background-color: rgba(20, 184, 166, 0.18) !important;
+  filter: blur(80px);
+}
+
+/* LCD 16x2 Text Display Specifics */
+.font-lcd {
+  font-family: 'VT323', monospace;
+  letter-spacing: 0.18em;
+  text-shadow: 0 0 8px rgba(126, 231, 135, 0.6);
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Toast Animation */
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.toast-animate {
+  animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

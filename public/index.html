@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Smoke Detector - IoT & Gas Monitoring Dashboard</title>
+  <meta name="description" content="IoT-enabled Smoke and Gas Detection System with ESP8266, MQ-2 Sensor, 16x2 LCD, and Real-time Web Control Dashboard.">
+  
+  <!-- Google Fonts: Inter & Space Grotesk & VT323 for authentic LCD -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=VT323&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              200: '#99f6e4',
+              300: '#5eead4',
+              400: '#2dd4bf',
+              500: '#14b8a6', // Teal
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+              950: '#042f2e'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+            lcd: ['VT323', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-300 antialiased selection:bg-teal-500 selection:text-white">
+
+  <!-- ======================================================== -->
+  <!-- PAGE 1: AUTHENTICATION MODAL / SCREEN (Login & Register) -->
+  <!-- ======================================================== -->
+  <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="relative w-full max-w-md bg-slate-900/90 border border-teal-500/30 rounded-2xl shadow-2xl shadow-teal-500/10 p-6 md:p-8 overflow-hidden backdrop-blur-xl">
+      <!-- Glow effect -->
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Header -->
+      <div class="text-center mb-6 relative">
+        <div class="inline-flex p-3 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-teal-400 mb-3 shadow-inner">
+          <i data-lucide="shield-alert" class="w-8 h-8"></i>
+        </div>
+        <h1 class="text-2xl font-bold font-display tracking-tight text-white">Simple Smoke Detector</h1>
+        <p class="text-xs text-slate-400 mt-1">IoT MQ-2 Gas & Smoke Monitoring System</p>
+      </div>
+
+      <!-- Auth Tabs: Login vs Register -->
+      <div class="flex rounded-xl bg-slate-800/80 p-1 mb-6 border border-slate-700/60">
+        <button id="authTabLogin" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-teal-500 text-white shadow-md transition-all">Sign In</button>
+        <button id="authTabRegister" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-400 hover:text-white transition-all">Register</button>
+      </div>
+
+      <!-- Error / Alert Message -->
+      <div id="authAlert" class="hidden mb-4 p-3 rounded-lg text-xs font-medium border flex items-center gap-2"></div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1" for="loginEmail">Email Address</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+            </span>
+            <input type="email" id="loginEmail" value="rudraksh@example.com" required
+                   class="w-full pl-10 pr-4 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition"
+                   placeholder="you@example.com">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1" for="loginPassword">Password</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i data-lucide="lock" class="w-4 h-4"></i>
+            </span>
+            <input type="password" id="loginPassword" value="password123" required
+                   class="w-full pl-10 pr-4 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition"
+                   placeholder="••••••••">
+          </div>
+        </div>
+        <button type="submit" id="btnSubmitLogin"
+                class="w-full py-2.5 px-4 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-medium rounded-xl shadow-lg shadow-teal-500/25 transition flex items-center justify-center gap-2">
+          <span>Sign In to Dashboard</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+      <!-- REGISTRATION FORM -->
+      <form id="registerForm" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1" for="regName">Full Name</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i data-lucide="user" class="w-4 h-4"></i>
+            </span>
+            <input type="text" id="regName" required
+                   class="w-full pl-10 pr-4 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition"
+                   placeholder="e.g. Rudraksh Sharma">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1" for="regEmail">Email Address</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+            </span>
+            <input type="email" id="regEmail" required
+                   class="w-full pl-10 pr-4 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition"
+                   placeholder="rudraksh@sbjain.edu.in">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1" for="regPassword">Password</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i data-lucide="lock" class="w-4 h-4"></i>
+            </span>
+            <input type="password" id="regPassword" required minlength="6"
+                   class="w-full pl-10 pr-4 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition"
+                   placeholder="Minimum 6 characters">
+          </div>
+        </div>
+        <button type="submit" id="btnSubmitRegister"
+                class="w-full py-2.5 px-4 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-medium rounded-xl shadow-lg shadow-teal-500/25 transition flex items-center justify-center gap-2">
+          <span>Create Account</span>
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+      <!-- Quick Demo Access Footnote -->
+      <div class="mt-6 pt-4 border-t border-slate-800 text-center">
+        <button id="btnQuickDemo" type="button" class="text-xs text-teal-400 hover:text-teal-300 underline font-medium">
+          ⚡ Quick Demo: Use pre-filled demo account (Rudraksh)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- PAGE 2: MAIN DASHBOARD APPLICATION                      -->
+  <!-- ======================================================== -->
+  <div id="mainApp" class="flex-1 flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 bg-slate-900/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          
+          <!-- Brand Logo & App Name -->
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-teal-500/30">
+              <i data-lucide="flame" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-lg font-bold font-display tracking-tight bg-gradient-to-r from-teal-400 to-emerald-400 bg-clip-text text-transparent">
+                  Simple Smoke Detector
+                </span>
+                <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold bg-teal-500/10 text-teal-300 border border-teal-500/20 rounded-full">
+                  IoT NodeMCU
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 flex items-center gap-1.5">
+                <span>Welcome,</span>
+                <span id="headerUserName" class="font-semibold text-slate-200">User</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Right Status & Controls -->
+          <div class="flex items-center gap-2 sm:gap-4">
+            
+            <!-- ESP8266 ONLINE / OFFLINE Status Badge -->
+            <div id="espStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800 border border-slate-700 transition-all shadow-sm">
+              <span id="espStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+              <span id="espStatusText" class="tracking-wide">ESP8266 CHECKING...</span>
+            </div>
+
+            <!-- Demo Hardware Simulator Button -->
+            <button id="btnOpenSimulator" title="Simulate Hardware Reading"
+                    class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-400 border border-slate-700 transition">
+              <i data-lucide="sliders" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Light / Dark Mode Toggle -->
+            <button id="btnThemeToggle" title="Toggle Light/Dark Theme"
+                    class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+              <i data-lucide="sun" id="themeIconSun" class="w-4 h-4 hidden"></i>
+              <i data-lucide="moon" id="themeIconMoon" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Logout Button -->
+            <button id="btnLogout" title="Sign Out"
+                    class="p-2 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-500/30 transition">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (Tab 1, Tab 2, Tab 3) -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-800/40">
+        <nav class="flex space-x-2 sm:space-x-4 overflow-x-auto py-2 scrollbar-none" aria-label="Tabs">
+          <button id="navTab1" class="tab-btn active px-4 py-2 text-sm font-medium rounded-xl flex items-center gap-2 transition whitespace-nowrap">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            <span>Tab 1: Dashboard</span>
+          </button>
+          <button id="navTab2" class="tab-btn px-4 py-2 text-sm font-medium rounded-xl flex items-center gap-2 transition whitespace-nowrap">
+            <i data-lucide="monitor" class="w-4 h-4"></i>
+            <span>Tab 2: Smart Display</span>
+          </button>
+          <button id="navTab3" class="tab-btn px-4 py-2 text-sm font-medium rounded-xl flex items-center gap-2 transition whitespace-nowrap">
+            <i data-lucide="lightbulb" class="w-4 h-4"></i>
+            <span>Tab 3: LED Control</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+      <!-- ======================================================== -->
+      <!-- TAB 1: SENSOR DASHBOARD                                  -->
+      <!-- ======================================================== -->
+      <section id="tabContent1" class="space-y-6 transition-all duration-300">
+        
+        <!-- SECTION 1: HERO SENSOR GAUGE & STATUS CARDS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Left / Col 1 & 2: Large MQ-2 Sensor Card with Gauge & Seek Bar -->
+          <div class="lg:col-span-2 bg-slate-800/70 border border-slate-700/60 rounded-3xl p-6 sm:p-8 backdrop-blur-xl relative overflow-hidden shadow-xl">
+            <!-- Glow background -->
+            <div id="heroCardGlow" class="absolute -top-20 -right-20 w-72 h-72 bg-teal-500/10 rounded-full blur-3xl pointer-events-none transition-all duration-700"></div>
+
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-400 mb-1">
+                  <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+                  MQ-2 Gas / Smoke Sensor (Pin A0)
+                </div>
+                <h2 class="text-xl sm:text-2xl font-bold font-display text-white">Live Atmospheric Level</h2>
+              </div>
+
+              <!-- Safety Status Badge -->
+              <div id="safetyStatusBadge" class="px-5 py-2 rounded-2xl text-sm font-bold tracking-wider uppercase flex items-center gap-2 shadow-lg bg-teal-500/20 text-teal-300 border border-teal-500/40">
+                <i data-lucide="shield-check" id="safetyStatusIcon" class="w-5 h-5"></i>
+                <span id="safetyStatusText">SAFE</span>
+              </div>
+            </div>
+
+            <!-- Gauge and Metric Value Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              
+              <!-- Interactive Gauge Visualization -->
+              <div class="relative flex flex-col items-center justify-center p-4">
+                <div class="relative w-56 h-32 flex items-end justify-center overflow-hidden">
+                  <!-- SVG Semi-Circle Gauge -->
+                  <svg viewBox="0 0 200 110" class="w-56 h-32 transform">
+                    <!-- Gauge Track (Background Arc) -->
+                    <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#334155" stroke-width="18" stroke-linecap="round"/>
+                    
+                    <!-- Colored Zones: Safe, Warning, Danger segments -->
+                    <path d="M 20 100 A 80 80 0 0 1 90 26" fill="none" stroke="#14b8a6" stroke-width="6" stroke-opacity="0.4" stroke-linecap="round"/>
+                    <path d="M 90 26 A 80 80 0 0 1 140 37" fill="none" stroke="#f59e0b" stroke-width="6" stroke-opacity="0.4" stroke-linecap="round"/>
+                    <path d="M 140 37 A 80 80 0 0 1 180 100" fill="none" stroke="#ef4444" stroke-width="6" stroke-opacity="0.4" stroke-linecap="round"/>
+
+                    <!-- Active Fill Arc -->
+                    <path id="gaugeArcFill" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#14b8a6" stroke-width="18" stroke-dasharray="251.2" stroke-dashoffset="170" stroke-linecap="round" class="transition-all duration-700 ease-out"/>
+                  </svg>
+
+                  <!-- Needle Pivot Point -->
+                  <div class="absolute bottom-0 w-4 h-4 rounded-full bg-slate-300 border-2 border-slate-900 shadow"></div>
+                </div>
+
+                <!-- Big Sensor Value Indicator -->
+                <div class="text-center mt-2">
+                  <div class="flex items-baseline justify-center gap-1.5">
+                    <span id="currentSensorValue" class="text-5xl font-black font-display tracking-tight text-white transition-all duration-300">350</span>
+                    <span class="text-xs font-semibold text-slate-400 uppercase">RAW ADC</span>
+                  </div>
+                  <p id="sensorLevelPercent" class="text-xs text-teal-400 font-medium mt-0.5">34% of 1023 max scale</p>
+                </div>
+              </div>
+
+              <!-- Colorful Seek Bar & Telemetry details -->
+              <div class="space-y-4">
+                <div>
+                  <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+                    <span>Smoke / Gas Concentration</span>
+                    <span id="seekBarValText" class="text-teal-400 font-bold">350 / 1023</span>
+                  </div>
+                  <!-- Multi-color Gradient Seek Bar -->
+                  <div class="relative w-full h-4 bg-slate-700 rounded-full overflow-hidden p-0.5 shadow-inner">
+                    <div id="seekBarIndicator"
+                         class="h-full rounded-full bg-gradient-to-r from-teal-400 via-amber-400 to-rose-500 transition-all duration-700 shadow-md"
+                         style="width: 34%;">
+                    </div>
+                  </div>
+                  <!-- Zone Labels under seek bar -->
+                  <div class="flex justify-between text-[10px] text-slate-400 font-medium mt-1 px-1">
+                    <span class="text-teal-400">0 Safe</span>
+                    <span class="text-amber-400" id="lblWarningThreshold">350 Warning</span>
+                    <span class="text-rose-400" id="lblDangerThreshold">650 Danger</span>
+                    <span>1023</span>
+                  </div>
+                </div>
+
+                <!-- Mini Details Grid -->
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                  <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+                    <div class="text-[11px] text-slate-400 flex items-center gap-1.5">
+                      <i data-lucide="clock" class="w-3.5 h-3.5 text-teal-400"></i>
+                      <span>Last Updated</span>
+                    </div>
+                    <div id="lastUpdatedTime" class="text-sm font-semibold text-slate-200 mt-1">12:30 PM</div>
+                    <div id="lastUpdatedDate" class="text-[10px] text-slate-500">05-10-2026 IST</div>
+                  </div>
+
+                  <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+                    <div class="text-[11px] text-slate-400 flex items-center gap-1.5">
+                      <i data-lucide="cpu" class="w-3.5 h-3.5 text-teal-400"></i>
+                      <span>Hardware Pin</span>
+                    </div>
+                    <div class="text-sm font-semibold text-slate-200 mt-1">ESP8266 A0</div>
+                    <div class="text-[10px] text-slate-500">NodeMCU CP2102</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Right / Col 3: Configurable Thresholds & Settings -->
+          <div class="bg-slate-800/70 border border-slate-700/60 rounded-3xl p-6 backdrop-blur-xl flex flex-col justify-between shadow-xl">
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <div class="p-2 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                  <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-white font-display">Alert Thresholds</h3>
+                  <p class="text-xs text-slate-400">Configure MQ-2 trip points</p>
+                </div>
+              </div>
+
+              <!-- Form for Thresholds -->
+              <form id="thresholdForm" class="space-y-4">
+                <!-- Warning Threshold -->
+                <div>
+                  <div class="flex justify-between items-center text-xs mb-1">
+                    <label class="font-medium text-amber-300 flex items-center gap-1" for="inputWarningThreshold">
+                      <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                      Warning Level
+                    </label>
+                    <span id="badgeWarningVal" class="font-mono font-bold text-amber-300">350</span>
+                  </div>
+                  <input type="range" id="inputWarningThreshold" min="50" max="900" step="10" value="350"
+                         class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400">
+                  <p class="text-[10px] text-slate-400 mt-1">Triggers Yellow Alert on LCD & Web Dashboard</p>
+                </div>
+
+                <!-- Danger Threshold -->
+                <div>
+                  <div class="flex justify-between items-center text-xs mb-1">
+                    <label class="font-medium text-rose-300 flex items-center gap-1" for="inputDangerThreshold">
+                      <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                      Danger Level
+                    </label>
+                    <span id="badgeDangerVal" class="font-mono font-bold text-rose-300">650</span>
+                  </div>
+                  <input type="range" id="inputDangerThreshold" min="100" max="1000" step="10" value="650"
+                         class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-rose-400">
+                  <p class="text-[10px] text-slate-400 mt-1">Triggers Red Alert on LCD, turns ON Actuator LED D3</p>
+                </div>
+
+                <button type="submit" id="btnSaveThresholds"
+                        class="w-full py-2.5 px-4 bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                  <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                  <span>Save Config to Server & IoT</span>
+                </button>
+              </form>
+            </div>
+
+            <!-- Quick Threshold Help / Tips -->
+            <div class="mt-4 pt-4 border-t border-slate-700/60 text-[11px] text-slate-400 space-y-1">
+              <p>💡 <span class="font-semibold text-slate-300">Tip:</span> Raw MQ-2 analog output depends on ambient room air and sensor burn-in time.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- GRAPHS SECTION -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Live Realtime Graph -->
+          <div class="bg-slate-800/70 border border-slate-700/60 rounded-3xl p-6 backdrop-blur-xl shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <div class="p-2 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                  <i data-lucide="activity" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-white font-display">Live Sensor Stream</h3>
+                  <p class="text-xs text-slate-400">Real-time incoming MQ-2 readings</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">
+                10s Interval
+              </span>
+            </div>
+            <div class="relative h-64 w-full">
+              <canvas id="liveChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Historical Trend Graph -->
+          <div class="bg-slate-800/70 border border-slate-700/60 rounded-3xl p-6 backdrop-blur-xl shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <div class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <i data-lucide="trending-up" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-white font-display">Historical Sensor Trend</h3>
+                  <p class="text-xs text-slate-400">Past recordings analysis</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                Asia/Kolkata +5:30
+              </span>
+            </div>
+            <div class="relative h-64 w-full">
+              <canvas id="historyChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SECTION 2: SAVED RECORDS TABLE WITH PAGINATION -->
+        <div class="bg-slate-800/70 border border-slate-700/60 rounded-3xl p-6 backdrop-blur-xl shadow-xl">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div class="flex items-center gap-2">
+              <div class="p-2 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                <i data-lucide="database" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-white font-display text-lg">Saved Sensor Records</h3>
+                <p class="text-xs text-slate-400">Stored in Simple JSON Database with Asia/Kolkata (+5:30) timestamps</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button id="btnRefreshTable" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition flex items-center gap-1.5">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Responsive Table Container -->
+          <div class="overflow-x-auto rounded-2xl border border-slate-700/50">
+            <table class="w-full text-left text-sm text-slate-300">
+              <thead class="bg-slate-900/80 text-xs uppercase font-semibold text-slate-400 border-b border-slate-700/60">
+                <tr>
+                  <th scope="col" class="px-4 py-3.5">#</th>
+                  <th scope="col" class="px-4 py-3.5">Smoke/Gas Value</th>
+                  <th scope="col" class="px-4 py-3.5">Status</th>
+                  <th scope="col" class="px-4 py-3.5">Time (IST)</th>
+                  <th scope="col" class="px-4 py-3.5">Date</th>
+                  <th scope="col" class="px-4 py-3.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="readingsTableBody" class="divide-y divide-slate-700/40">
+                <!-- Populated via JavaScript -->
+                <tr>
+                  <td colspan="6" class="px-4 py-8 text-center text-slate-400">Loading records...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-4 border-t border-slate-700/40">
+            <div id="paginationInfo" class="text-xs text-slate-400">
+              Showing <span class="font-semibold text-slate-200">1</span> to <span class="font-semibold text-slate-200">10</span> of <span class="font-semibold text-slate-200">0</span> records
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btnPrevPage" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium text-slate-200 transition flex items-center gap-1">
+                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                <span>Previous</span>
+              </button>
+              <div id="paginationPages" class="flex items-center gap-1 text-xs">
+                <!-- Page numbers generated dynamically -->
+              </div>
+              <button id="btnNextPage" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium text-slate-200 transition flex items-center gap-1">
+                <span>Next</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 2: SMART DISPLAY SECTION (16x2 LCD)                  -->
+      <!-- ======================================================== -->
+      <section id="tabContent2" class="hidden space-y-6 transition-all duration-300">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          
+          <!-- Left: LCD Text Input Controls -->
+          <div class="bg-slate-800/70 border border-slate-700/60 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="p-3 rounded-2xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                <i data-lucide="message-square" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold font-display text-white">Smart 16x2 LCD Display</h2>
+                <p class="text-xs text-slate-400">Send custom text to ESP8266 & 16x2 I2C LCD screen</p>
+              </div>
+            </div>
+
+            <!-- Form -->
+            <form id="smartDisplayForm" class="space-y-5">
+              
+              <!-- Field 1: Row 1 (Max 16 chars) -->
+              <div>
+                <div class="flex justify-between items-center text-xs font-medium text-slate-300 mb-1.5">
+                  <label for="lcdField1" class="flex items-center gap-1.5">
+                    <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 text-[10px] font-bold">R1</span>
+                    <span>Row 1 Message (Max 16 Chars)</span>
+                  </label>
+                  <span id="charCountR1" class="text-slate-400 font-mono">11 / 16</span>
+                </div>
+                <div class="relative">
+                  <input type="text" id="lcdField1" maxlength="16" value="SMOKE ALERT" required
+                         class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition tracking-wider"
+                         placeholder="e.g. SMOKE ALERT">
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">Displayed on Line 1 of the physical 16x2 LCD during cycle</p>
+              </div>
+
+              <!-- Field 2: Row 2 (Max 16 chars) -->
+              <div>
+                <div class="flex justify-between items-center text-xs font-medium text-slate-300 mb-1.5">
+                  <label for="lcdField2" class="flex items-center gap-1.5">
+                    <span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">R2</span>
+                    <span>Row 2 Message (Max 16 Chars)</span>
+                  </label>
+                  <span id="charCountR2" class="text-slate-400 font-mono">10 / 16</span>
+                </div>
+                <div class="relative">
+                  <input type="text" id="lcdField2" maxlength="16" value="CHECK AREA" required
+                         class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition tracking-wider"
+                         placeholder="e.g. CHECK AREA">
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">Displayed on Line 2 of the physical 16x2 LCD during cycle</p>
+              </div>
+
+              <!-- Save Button -->
+              <button type="submit" id="btnSaveLcd"
+                      class="w-full py-3 px-6 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-medium rounded-xl shadow-lg shadow-teal-500/20 transition flex items-center justify-center gap-2">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                <span>Save & Transmit to ESP8266</span>
+              </button>
+            </form>
+
+            <!-- Quick Template Buttons -->
+            <div class="mt-6 pt-5 border-t border-slate-700/60">
+              <label class="text-xs font-semibold text-slate-400 block mb-2">⚡ Quick Presets</label>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" class="preset-btn px-3 py-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-xs text-slate-300 transition"
+                        data-r1="SMOKE ALERT" data-r2="CHECK AREA">
+                  Smoke Alert
+                </button>
+                <button type="button" class="preset-btn px-3 py-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-xs text-slate-300 transition"
+                        data-r1="ALL CLEAR" data-r2="AIR QUALITY OK">
+                  All Clear
+                </button>
+                <button type="button" class="preset-btn px-3 py-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-xs text-slate-300 transition"
+                        data-r1="EVACUATE NOW" data-r2="FIRE DETECTED">
+                  Evacuate
+                </button>
+                <button type="button" class="preset-btn px-3 py-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-xs text-slate-300 transition"
+                        data-r1="SB JAIN ETC" data-r2="ONE PIECE TEAM">
+                  SB Jain Project
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Interactive 16x2 LCD Mockup Preview -->
+          <div class="bg-slate-800/70 border border-slate-700/60 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl flex flex-col items-center">
+            <div class="w-full flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 font-display">16x2 I2C LCD Live Visualizer</h3>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Address @0x27 (D1 SCL, D2 SDA)
+              </span>
+            </div>
+
+            <!-- Authentic Physical LCD Chassis -->
+            <div class="w-full max-w-md bg-gradient-to-b from-slate-900 to-black p-4 rounded-2xl border-4 border-slate-700 shadow-2xl relative">
+              <!-- Screw mounts in corners -->
+              <div class="absolute top-2 left-2 w-2 h-2 rounded-full bg-slate-600 border border-slate-800"></div>
+              <div class="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-600 border border-slate-800"></div>
+              <div class="absolute bottom-2 left-2 w-2 h-2 rounded-full bg-slate-600 border border-slate-800"></div>
+              <div class="absolute bottom-2 right-2 w-2 h-2 rounded-full bg-slate-600 border border-slate-800"></div>
+
+              <!-- Bezel frame -->
+              <div class="bg-slate-950 p-3 rounded-lg border-2 border-slate-800">
+                <!-- LCD Blue/Green Backlit Screen -->
+                <div class="bg-[#0f3854] text-[#7ee787] p-4 rounded font-lcd text-2xl tracking-[0.2em] shadow-inner select-none relative overflow-hidden min-h-[90px] flex flex-col justify-center">
+                  <!-- Scanline effect -->
+                  <div class="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/5 to-transparent pointer-events-none"></div>
+
+                  <!-- Row 1 (16 chars) -->
+                  <div id="lcdPreviewR1" class="whitespace-pre overflow-hidden uppercase">SMOKE ALERT     </div>
+                  <!-- Row 2 (16 chars) -->
+                  <div id="lcdPreviewR2" class="whitespace-pre overflow-hidden uppercase">CHECK AREA      </div>
+                </div>
+              </div>
+
+              <!-- LCD Label -->
+              <div class="text-center text-[10px] text-slate-500 font-mono mt-2 uppercase tracking-widest">
+                HD44780 1602 LCD with PCF8574 I2C Backpack
+              </div>
+            </div>
+
+            <!-- Sequence Explain Info Card -->
+            <div class="mt-6 w-full p-4 rounded-2xl bg-slate-900/60 border border-slate-700/50 text-xs text-slate-400 space-y-2">
+              <div class="font-semibold text-slate-200 flex items-center gap-1.5">
+                <i data-lucide="info" class="w-4 h-4 text-teal-400"></i>
+                <span>ESP8266 LCD Display Loop Sequence</span>
+              </div>
+              <ol class="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
+                <li><span class="text-teal-400">Step 1:</span> Reads MQ-2 sensor &rarr; <span class="font-mono text-white">SMOKE/GAS: [val]</span> (2s)</li>
+                <li><span class="text-teal-400">Step 2:</span> Safety Evaluation &rarr; <span class="font-mono text-white">STATUS: [SAFE/WARN/DANGER]</span> (2s)</li>
+                <li><span class="text-teal-400">Step 3:</span> Smart Display from Server &rarr; <span class="font-mono text-white">SMART DISPLAY: [R2]</span> (2s)</li>
+                <li><span class="text-teal-400">Step 4:</span> LED Actuator &rarr; <span class="font-mono text-white">LED STATUS: [ON/OFF]</span> (2s)</li>
+              </ol>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 3: INNOVATIVE LED CONTROL SECTION                    -->
+      <!-- ======================================================== -->
+      <section id="tabContent3" class="hidden space-y-6 transition-all duration-300">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+
+          <!-- Left: Glowing 3D Neomorphic LED Bulb Visualization -->
+          <div class="bg-slate-800/70 border border-slate-700/60 rounded-3xl p-8 backdrop-blur-xl shadow-xl flex flex-col items-center justify-center relative overflow-hidden">
+            
+            <div class="text-center mb-6">
+              <span class="text-xs font-semibold uppercase tracking-wider text-teal-400">Hardware Actuator</span>
+              <h2 class="text-2xl font-bold font-display text-white mt-1">LED Actuator Control (Pin D3)</h2>
+              <p class="text-xs text-slate-400 mt-1">Remote Web Override & Automatic Danger Alert System</p>
+            </div>
+
+            <!-- Glowing Bulb Container -->
+            <div class="relative my-8 flex items-center justify-center">
+              <!-- Radial background glow for LED -->
+              <div id="ledAuraGlow" class="absolute w-52 h-52 rounded-full bg-teal-500/5 blur-3xl transition-all duration-500"></div>
+
+              <!-- Interactive LED Bulb Artwork -->
+              <div id="ledBulbElement" class="w-36 h-36 rounded-full bg-slate-900 border-4 border-slate-700 flex flex-col items-center justify-center shadow-2xl transition-all duration-500 cursor-pointer">
+                <i data-lucide="lightbulb" id="ledBulbIcon" class="w-16 h-16 text-slate-600 transition-all duration-500"></i>
+                <span id="ledBulbStateText" class="text-xs font-mono font-bold text-slate-500 mt-1 uppercase tracking-wider transition-all duration-500">
+                  OFF
+                </span>
+              </div>
+            </div>
+
+            <!-- Current LED Status Big Indicator -->
+            <div class="text-center space-y-1">
+              <div class="text-xs text-slate-400">Current Actuator State</div>
+              <div id="ledStateHeroBadge" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold bg-slate-700 text-slate-300 border border-slate-600">
+                <span id="ledStateIndicatorDot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+                <span id="ledStateHeroText">LED IS OFF</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right: Control Toggle and Status Telemetry -->
+          <div class="bg-slate-800/70 border border-slate-700/60 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl space-y-6">
+            
+            <div class="flex items-center gap-3">
+              <div class="p-3 rounded-2xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                <i data-lucide="power" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold font-display text-white">Manual LED Control</h3>
+                <p class="text-xs text-slate-400">Click to switch NodeMCU D3 pin HIGH/LOW</p>
+              </div>
+            </div>
+
+            <!-- Primary Switch Action -->
+            <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-700/60 space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-sm font-bold text-white">Toggle State</div>
+                  <div class="text-xs text-slate-400">Switches LED immediately</div>
+                </div>
+
+                <!-- Toggle Action Button -->
+                <button id="btnToggleLed"
+                        class="px-6 py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all duration-300 flex items-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700">
+                  <i data-lucide="power" class="w-4 h-4"></i>
+                  <span id="btnToggleLedText">Turn LED ON</span>
+                </button>
+              </div>
+
+              <!-- Reset to Automatic Mode -->
+              <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                <span id="lblLedMode" class="text-slate-400">Mode: <strong class="text-teal-400 font-medium">Automatic</strong></span>
+                <button id="btnResetAutoLed" class="text-xs text-teal-400 hover:text-teal-300 font-semibold underline">
+                  Reset to Auto Danger Trigger
+                </button>
+              </div>
+            </div>
+
+            <!-- Combined Status Telemetry Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <!-- Smoke Status -->
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+                <div class="text-[11px] text-slate-400">Smoke/Gas</div>
+                <div id="telemetrySmokeStatus" class="text-sm font-bold text-teal-400 mt-1 uppercase">SAFE</div>
+                <div class="text-[10px] text-slate-500">From Pin A0</div>
+              </div>
+
+              <!-- ESP8266 Status -->
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+                <div class="text-[11px] text-slate-400">ESP8266 State</div>
+                <div id="telemetryEspStatus" class="text-sm font-bold text-slate-400 mt-1 uppercase">OFFLINE</div>
+                <div class="text-[10px] text-slate-500">Heartbeat Check</div>
+              </div>
+
+              <!-- LED Hardware Pin -->
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+                <div class="text-[11px] text-slate-400">Actuator Pin</div>
+                <div id="telemetryLedPin" class="text-sm font-bold text-slate-400 mt-1 uppercase">LOW (D3)</div>
+                <div class="text-[10px] text-slate-500">NodeMCU GPIO0</div>
+              </div>
+            </div>
+
+            <!-- Safety Automation Notice -->
+            <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 flex items-start gap-2.5">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0"></i>
+              <p>
+                <strong>Automatic Safety Override:</strong> If the MQ-2 sensor reading crosses the Danger threshold (<span id="noticeDangerThreshold">650</span>), the LED will automatically switch <strong>ON</strong> and flash an alert to warn nearby occupants.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- FOOTER WITH ANIMATED PULSE HEART ICON -->
+    <footer class="mt-auto border-t border-slate-800 bg-slate-900/60 py-6 text-center text-xs text-slate-400">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center gap-1.5 justify-center">
+          <span>Developed with</span>
+          <span class="inline-flex items-center text-rose-500 animate-pulse">
+            <i data-lucide="heart" class="w-4 h-4 fill-rose-500"></i>
+          </span>
+          <span>by <strong class="text-teal-400 font-semibold">ONE PIECE</strong>.</span>
+        </div>
+        <div class="text-slate-500">
+          Department of ETC, SB Jain, Nagpur
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- DEMO HARDWARE SIMULATOR MODAL (For demonstration)        -->
+  <!-- ======================================================== -->
+  <div id="simModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-teal-500/30 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sliders" class="w-5 h-5 text-teal-400"></i>
+          <h3 class="font-bold text-white">Hardware Simulator</h3>
+        </div>
+        <button id="btnCloseSim" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <p class="text-xs text-slate-400 mb-4">
+        Simulate real-time analog readings without flashing hardware yet!
+      </p>
+
+      <div class="space-y-4">
+        <div>
+          <div class="flex justify-between text-xs text-slate-300 mb-1">
+            <span>Analog Sensor Value</span>
+            <span id="simValPreview" class="font-mono font-bold text-teal-400">350</span>
+          </div>
+          <input type="range" id="simSlider" min="0" max="1023" value="350"
+                 class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer accent-teal-400">
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" class="sim-quick-btn py-1.5 px-2 rounded-lg bg-teal-500/20 text-teal-300 text-xs font-semibold hover:bg-teal-500/30" data-val="250">
+            Safe (250)
+          </button>
+          <button type="button" class="sim-quick-btn py-1.5 px-2 rounded-lg bg-amber-500/20 text-amber-300 text-xs font-semibold hover:bg-amber-500/30" data-val="450">
+            Warn (450)
+          </button>
+          <button type="button" class="sim-quick-btn py-1.5 px-2 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-semibold hover:bg-rose-500/30" data-val="750">
+            Danger (750)
+          </button>
+        </div>
+
+        <button id="btnSendSimReading" class="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-medium text-xs shadow-md transition">
+          Inject Simulation Reading
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- Main Application Script -->
+  <script src="/js/app.js"></script>
+</body>
+</html>

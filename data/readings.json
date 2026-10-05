@@ -1,0 +1,58 @@
+[
+  {
+    "id": "rec_1791184487406",
+    "sensorValue": 280,
+    "status": "SAFE",
+    "time": "12:44 PM",
+    "date": "05-10-2026",
+    "timestamp": 1791184487401
+  },
+  {
+    "id": "rec_1791184295193",
+    "sensorValue": 720,
+    "status": "DANGER",
+    "time": "12:41 PM",
+    "date": "05-10-2026",
+    "timestamp": 1791184294976
+  },
+  {
+    "id": "rec_1791183600000",
+    "sensorValue": 350,
+    "status": "SAFE",
+    "time": "12:30 PM",
+    "date": "05-10-2026",
+    "timestamp": 1791183600000
+  },
+  {
+    "id": "rec_1791183480000",
+    "sensorValue": 680,
+    "status": "DANGER",
+    "time": "12:28 PM",
+    "date": "05-10-2026",
+    "timestamp": 1791183480000
+  },
+  {
+    "id": "rec_1791183300000",
+    "sensorValue": 420,
+    "status": "WARNING",
+    "time": "12:25 PM",
+    "date": "05-10-2026",
+    "timestamp": 1791183300000
+  },
+  {
+    "id": "rec_1791183120000",
+    "sensorValue": 380,
+    "status": "SAFE",
+    "time": "12:22 PM",
+    "date": "05-10-2026",
+    "timestamp": 1791183120000
+  },
+  {
+    "id": "rec_1791183000000",
+    "sensorValue": 340,
+    "status": "SAFE",
+    "time": "12:20 PM",
+    "date": "05-10-2026",
+    "timestamp": 1791183000000
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "warningThreshold": 350,
+  "dangerThreshold": 650,
+  "ledStatus": "OFF",
+  "ledManualOverride": false,
+  "lcdLine1": "GAS LEAK WARN",
+  "lcdLine2": "EVACUATE ROOM",
+  "lastSeen": 1791184487401,
+  "currentReading": {
+    "sensorValue": 280,
+    "status": "SAFE",
+    "time": "12:44 PM",
+    "date": "05-10-2026",
+    "timestamp": 1791184487401
+  }
+}
